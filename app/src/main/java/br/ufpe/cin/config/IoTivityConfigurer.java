@@ -50,7 +50,6 @@ public class IoTivityConfigurer implements SignUpManager.SignUpListener, SignInM
     }
 
     public void signIn(String accessToken) throws OcException {
-        Log.i(TAG, "building account manager, IP = " + this.mHost);
         mAccountManager = OcPlatform
                 .constructAccountManagerObject(
                         this.mHost,

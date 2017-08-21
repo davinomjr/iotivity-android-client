@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">CloudIoTivityClient</string>
+    <string name="connect">Connect</string>
+    <string name="title_activity_test">TestActivity</string>
+    <string name="ok">Ok</string>
+    <string name="cancel">Cancel</string>
+    <string name="auth_dialog_message">You\'re going to be redirected to GITHUB so you can get an access token. This will be needed to get access to the resources</string>
+    <string name="auth_dialog_title">Authorization</string>
+    <string name="find_resources">Find resources</string>
 </resources>
