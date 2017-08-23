@@ -7,4 +7,5 @@
     <string name="auth_dialog_message">You\'re going to be redirected to GITHUB so you can get an access token. This will be needed to get access to the resources</string>
     <string name="auth_dialog_title">Authorization</string>
     <string name="find_resources">Find resources</string>
+    <string name="toggle">Toggle Switch</string>
 </resources>

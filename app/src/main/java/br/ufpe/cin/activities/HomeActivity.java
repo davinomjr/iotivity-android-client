@@ -12,6 +12,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.ProgressBar;
+import android.widget.ToggleButton;
 
 import org.iotivity.base.ObserveType;
 import org.iotivity.base.OcConnectivityType;
@@ -40,11 +41,11 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
     private final String requestTokenUrl = "https://github.com/login?return_to=%2Flogin%2Foauth%2Fauthorize%3Fclient_id%3Dea9c18f540323b0213d0%26redirect_uri%3Dhttp%253A%252F%252Fwww.example.com%252Foauth_callback%252F";
     private OcResource mResource;
     private IoTivityConfigurer mConfigurer;
-    private Button mConnectBtn, mFindResourcesBtn;
     private String mToken;
     private ResourceListAdapter mAdapter;
     private RecyclerView mRecyclerView;
     private ArrayList<String> mResourcesFound;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -173,7 +174,32 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.find_resources_btn:
                 findResources();
                 break;
+            case R.id.toggleSwitch:
+                toggleSwitch();
+                break;
         }
+    }
+
+    private void toggleSwitch(){
+        try {
+            Log.i(TAG, String.format("Toggle Switch to: %s", !getSwitchState()));
+            OcRepresentation representation = new OcRepresentation();
+            representation.setValue("value", !getSwitchState());
+            mResource.post("x.org.iotivity.bs",
+                    OcPlatform.DEFAULT_INTERFACE,
+                    representation,
+                    new HashMap<String, String>(),
+                    new PostListener());
+        }
+        catch(OcException e){
+            Log.e(TAG, String.format("Error setting representation value"));
+            e.printStackTrace();
+        }
+
+    }
+
+    private boolean getSwitchState(){
+        return ((ToggleButton) findViewById(R.id.toggleSwitch)).isChecked();
     }
 
 
@@ -235,18 +261,28 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private class SwitchFinder implements OcPlatform.OnResourceFoundListener, OcResource.OnGetListener {
-        @Override public void onResourceFound(OcResource ocResource) {List<String> resourceTypes = ocResource.getResourceTypes();String resourceUri = ocResource.getUri();Log.i(TAG, String.format("Binary Switch resources found: %s", resourceUri));
+        @Override public void onResourceFound(OcResource ocResource) {
+            List<String> resourceTypes = ocResource.getResourceTypes();String resourceUri = ocResource.getUri();Log.i(TAG, String.format("Binary Switch resources found: %s", resourceUri));
             mResourcesFound.add(resourceUri);
-            for (String type : resourceTypes) {if (type.equals("x.org.iotivity.bs")) {
-                Log.i(TAG, String.format("Found Binary Switch", type));
-                Map<String, String> query = new HashMap<>();
-                query.put("if", OcPlatform.LINK_INTERFACE);
-                try {
-                    ocResource.get(query, this);
-                } catch (OcException e) {
-                    e.printStackTrace();
-                }
-            }}}
+            for (String type : resourceTypes) {
+                if (type.equals("x.org.iotivity.bs")) {
+                    runOnUiThread(() -> {
+                        findViewById(R.id.find_resources_btn).setVisibility(View.INVISIBLE);
+                        ToggleButton toggleButton =  (ToggleButton) findViewById(R.id.toggleSwitch);
+                        toggleButton.setVisibility(View.VISIBLE);
+                        toggleButton.setOnClickListener(HomeActivity.this);
+                    });
+
+                    Log.i(TAG, "Found Binary Switch");
+                    Map<String, String> query = new HashMap<>();
+                    query.put("if", OcPlatform.LINK_INTERFACE);
+                    try {
+                        ocResource.get(query, this);
+                    } catch (OcException e) {
+                        e.printStackTrace();
+                    }
+                }}}
+
         @Override public void onFindResourceFailed(Throwable throwable, String s) {throwable.printStackTrace();System.exit(1);}
         @Override public void onGetCompleted(List<OcHeaderOption> list, OcRepresentation ocRepresentation) {Log.i(TAG, "Connected!");
             runOnUiThread(() -> {showSnackBar("Resources found!");stopLoading();RecyclerView recyclerView = (RecyclerView)findViewById(R.id.rv);setupRecyclerview(recyclerView, mResourcesFound);});
@@ -255,7 +291,11 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
                     true,
                     Collections.singletonList("x.org.iotivity.bs"),
                     Collections.singletonList(OcPlatform.DEFAULT_INTERFACE));
-                mResource.observe(ObserveType.OBSERVE, new HashMap<>(), new SwitchObserver());} catch (Exception e) {e.printStackTrace();System.exit(1);}}
+
+                mResource.observe(ObserveType.OBSERVE, new HashMap<>(), new SwitchObserver());
+
+
+            } catch (Exception e) {e.printStackTrace();System.exit(1);}}
         @Override public void onGetFailed(Throwable throwable) {throwable.printStackTrace();System.exit(1);}}
 
 
@@ -267,7 +307,7 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
                                        OcRepresentation ocRepresentation,
                                        int i) {
             try {
-                Log.i(TAG, String.format("Switch state changed: %s", ocRepresentation.getValue("value")));
+                Log.i(TAG, String.format("OBSERVABLE: Switch state changed: %s", ocRepresentation.getValue("value")));
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -275,7 +315,23 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
 
         @Override
         public void onObserveFailed(Throwable throwable) {
+            throwable.printStackTrace();
+        }
+    }
 
+    private class PostListener implements OcResource.OnPostListener{
+
+        @Override
+        public void onPostCompleted(List<OcHeaderOption> list, OcRepresentation ocRepresentation) {
+            String resultMessage = null;
+            resultMessage = String.format("Switch changed state on the HUB and is now: %s", HomeActivity.this.getSwitchState() ? "On" : "Off");
+            Log.i(TAG, resultMessage);
+            showSnackBar(resultMessage);
+        }
+
+        @Override
+        public void onPostFailed(Throwable throwable) {
+            throwable.printStackTrace();
         }
     }
 }

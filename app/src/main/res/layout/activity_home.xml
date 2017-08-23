@@ -37,8 +37,6 @@
         tools:layout_editor_absoluteX="0dp" />
 
 
-
-
         <Button
             android:layout_width="170dp"
             android:layout_height="60dp"
@@ -60,6 +58,14 @@
             android:theme="@style/AppButton.InfoButton"
             android:visibility="invisible"
             />
+
+        <ToggleButton
+            android:id="@+id/toggleSwitch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:text="@string/toggle"
+            android:visibility="invisible"/>
 
 
     </RelativeLayout>
